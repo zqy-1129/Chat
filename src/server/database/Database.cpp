@@ -29,7 +29,8 @@ bool MySQL::connect()  // 连接数据库
     if (p != nullptr)
     {
         // C和C++默认的编码是ASCII码，中文是乱码
-        mysql_query(_conn, "set names gbk");
+        mysql_query(_conn, "SET NAMES utf8mb4");
+        mysql_set_character_set(_conn, "utf8mb4");
         LOG_INFO << "MySQL Connect Success!";
         return true;
     }
