@@ -2,6 +2,7 @@
 
 #include "json.hpp"
 #include "UserModel.h"
+#include "OfflineMessageModel.h"
 
 #include <muduo/net/TcpConnection.h>
 #include <mutex>
@@ -41,6 +42,9 @@ public:
     // 处理客户端异常退出
     void clientCloseException(const TcpConnectionPtr &conn);
 
+    // 服务器异常关闭，业务重置
+    void reset();
+
     // 获取消息对应的处理器
     MsgHandler getHandler(int msgid);
 
@@ -57,6 +61,7 @@ private:
     // 互斥锁，保证线程安全
     mutex _connMutex;
 
-    // 用户数据操作类对象，负责User表的操作
+    // 数据操作类对象
     UserModel _userModel;
+    OfflineMessageModel _offlineMessageModel;
 };

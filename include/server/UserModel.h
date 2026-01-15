@@ -17,5 +17,8 @@ public:
     // 更新用户状态信息
     bool updateState(User user);
 
+    // 重置用户状态信息
+    void resetState();
+
 private:
 };

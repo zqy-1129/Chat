@@ -16,4 +16,5 @@ enum EnMsgType
 // {"msgid":3,"name":"hajimi","password":"123456"}
 // {"msgid":1,"id":2,"password":"654321"}
 // {"msgid":1,"id":1,"password":"123456"}
-// {"msgid":5,"id":2."from":"哈基米","to":1,"msg":"咪"}
+// {"msgid":5,"id":2,"from":"哈基米","to":1,"msg":"咪"}
+// {"msgid":5,"id":2,"from":"哈基米","to":1,"msg":"咪咪"}

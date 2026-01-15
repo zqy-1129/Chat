@@ -3,13 +3,14 @@
 
 bool UserModel::insert(User& user)
 {
-    // 组装SQL语句
     char sql[1024] = {0};
     sprintf(sql, "insert into User(name, password, state) values('%s', '%s', '%s')", 
         user.getName().c_str(), user.getPassword().c_str(), user.getState().c_str());
     MySQL mysql;
-    if (mysql.connect()) {
-        if (mysql.update(sql)) {
+    if (mysql.connect()) 
+    {
+        if (mysql.update(sql)) 
+        {
             // 获取插入成功的用户数据生成的主键id
             user.setId(mysql_insert_id(mysql.getConnection()));
             return true;
@@ -20,7 +21,6 @@ bool UserModel::insert(User& user)
 
 User UserModel::query(int id)
 {
-    // 组装SQL语句
     char sql[1024] = {0};
     sprintf(sql, "select * from User where id = %d", id);
     MySQL mysql;
@@ -48,15 +48,25 @@ User UserModel::query(int id)
 
 bool UserModel::updateState(User user)
 {
-    // 组装SQL语句
     char sql[1024] = {0};
     sprintf(sql, "update User set state = '%s' where id = %d", user.getState().c_str(), user.getId());
     MySQL mysql;
-    if (mysql.connect()) {
+    if (mysql.connect()) 
+    {
         if (mysql.update(sql))
         {
             return true;
         }
     }
     return false;
+}
+
+void UserModel::resetState()
+{
+    char sql[1024] = "update User set state = 'offline' where state = 'online'";
+    MySQL mysql;
+    if (mysql.connect()) 
+    {
+        mysql.update(sql);
+    }
 }

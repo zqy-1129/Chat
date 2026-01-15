@@ -2,8 +2,10 @@
 #include "public.h" 
 
 #include <muduo/base/Logging.h>
+#include <vector>
 
 using namespace muduo;
+using namespace std;
 
 // 获取单例对象的接口函数
 ChatService *ChatService::instance()
@@ -15,9 +17,9 @@ ChatService *ChatService::instance()
 // 注册消息id和对应的业务处理方法
 ChatService::ChatService()
 {
-    _msgHandlerMap.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
-    _msgHandlerMap.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
-    _msgHandlerMap.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
+    _msgHandlerMap.insert({LOGIN_MSG, bind(&ChatService::login, this, _1, _2, _3)});
+    _msgHandlerMap.insert({REG_MSG, bind(&ChatService::reg, this, _1, _2, _3)});
+    _msgHandlerMap.insert({ONE_CHAT_MSG, bind(&ChatService::oneChat, this, _1, _2, _3)});
 }
 
 void ChatService::login(const TcpConnectionPtr &conn,
@@ -51,7 +53,6 @@ void ChatService::login(const TcpConnectionPtr &conn,
             response["id"] = user.getId();
             response["errno"] = 0;
             response["name"] = user.getName();
-            conn->send(response.dump());
 
             // 添加用户到用户连接集合中
             {   
@@ -59,6 +60,17 @@ void ChatService::login(const TcpConnectionPtr &conn,
                 lock_guard<mutex> lock(_connMutex);
                 _userConnMap.insert({id, conn});
             }
+
+            // 查询是否有离线消息
+            vector<string> vec = _offlineMessageModel.query(id);
+            if (!vec.empty())
+            {
+                response["offineMessage"] = vec;
+                // 读取完之后，则删除离线消息
+                _offlineMessageModel.remove(id);
+            }
+
+            conn->send(response.dump());
         }
     }
     else 
@@ -134,6 +146,7 @@ void ChatService::oneChat(const TcpConnectionPtr &conn,
         }
     }
     // 不再线，离线存储
+    _offlineMessageModel.insert(toId, js.dump());
 }
 
 void ChatService::clientCloseException(const TcpConnectionPtr &conn)
@@ -159,6 +172,12 @@ void ChatService::clientCloseException(const TcpConnectionPtr &conn)
         user.setState("offline");
         _userModel.updateState(user);
     }
+}
+
+void ChatService::reset()
+{
+    // 把online状态的用户重置
+    _userModel.resetState();
 }
 
 MsgHandler ChatService::getHandler(int msgid)
