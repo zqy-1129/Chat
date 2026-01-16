@@ -1,15 +1,6 @@
 #include "OfflineMessageModel.h"
 #include "Database.h"
 
-OfflineMessageModel::OfflineMessageModel()
-{
-
-}
-OfflineMessageModel::~OfflineMessageModel()
-{
-
-}
-
 void OfflineMessageModel::insert(int userId, const string& message)
 {   
     char sql[1024] = {0};

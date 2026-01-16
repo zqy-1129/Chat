@@ -3,6 +3,8 @@
 #include "json.hpp"
 #include "UserModel.h"
 #include "OfflineMessageModel.h"
+#include "FriendModel.h"
+#include "GroupModel.h"
 
 #include <muduo/net/TcpConnection.h>
 #include <mutex>
@@ -39,11 +41,23 @@ public:
     // 一对一聊天
     void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
 
+    // 创建群组
+    void createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
+
+    // 加入群组
+    void addGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
+
+    // 群聊
+    void groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
+
     // 处理客户端异常退出
     void clientCloseException(const TcpConnectionPtr &conn);
 
     // 服务器异常关闭，业务重置
     void reset();
+
+    // 添加好友业务
+    void addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time);
 
     // 获取消息对应的处理器
     MsgHandler getHandler(int msgid);
@@ -64,4 +78,7 @@ private:
     // 数据操作类对象
     UserModel _userModel;
     OfflineMessageModel _offlineMessageModel;
+    FriendModel _friendModel;
+    GroupModel _groupModel;
+
 };

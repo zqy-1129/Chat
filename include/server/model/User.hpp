@@ -20,7 +20,7 @@ public:
     string getPassword() const { return password; }
     string getState() const { return state; }
 
-private:
+protected:
     int id;
     string name;
     string password;

@@ -8,9 +8,6 @@ using namespace std;
 class OfflineMessageModel
 {
 public:
-    OfflineMessageModel();
-    ~OfflineMessageModel();
-
     // 存储用户离线消息
     void insert(int userId, const string& message);
 
