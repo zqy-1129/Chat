@@ -30,6 +30,9 @@ vector<User> g_currentUserFriendList;
 // 当前登录用户的群组列表信息
 vector<Group> g_currentUserGroupList;
 
+// 控制聊天程序
+bool isMainMenuRunning = false;
+
 void help(int = 0, string = "");
 void chat(int, string);
 void addFriend(int, string);
@@ -175,7 +178,7 @@ int main(int argc, char **argv)
                                 g_currentUserGroupList.clear();
                                 g_currentUser.setId(responsejs["id"].get<int>());
                                 g_currentUser.setName(responsejs["name"]);
-                                cout << responsejs.dump() << endl;
+                                // cout << responsejs.dump() << endl;
 
                                 // 记录当前用户的好友列表 - 修复：302崩溃根因，三重校验+顺序正确+异常捕获
                                 if (responsejs.contains("friends") && !responsejs["friends"].is_null() && responsejs["friends"].is_array())
@@ -261,11 +264,16 @@ int main(int argc, char **argv)
                                 }
                             }
 
-                            // 登录成功，启动接受线程负责接受数据
-                            std::thread readTask(readTaskHandler, clientfd);
-                            readTask.detach();
-
+                            // 登录成功，启动接受线程负责接受数据，只需启动一次
+                            static int threadNumber = 0;
+                            if (threadNumber == 0) {
+                                std::thread readTask(readTaskHandler, clientfd);
+                                readTask.detach();
+                                threadNumber++;
+                            }
+                            
                             // 进入聊天主菜单界面
+                            isMainMenuRunning = true;
                             mainMenu(clientfd);
                         }catch(const exception& e){
                             cerr << "JSON解析总异常: " << e.what() << endl;
@@ -551,13 +559,27 @@ void groupChat(int clientfd, string str)
 
 // 修复：补充quit退出逻辑
 void quit(int clientfd, string)
-{
+{   
     cout << "正在退出登录..." << endl;
+    json js;
+    js["msgid"] = QUIT_MSG;
+    js["id"] = g_currentUser.getId();
+    string buffer = js.dump();
+    
+    int len = send(clientfd, buffer.c_str(), buffer.size(), 0);
+    if (len == -1)
+    {
+        cerr << "send quit msg error ->" << buffer << endl;
+    }
+    else 
+    {
+        isMainMenuRunning = false;
+    }
     g_currentUserFriendList.clear();
     g_currentUserGroupList.clear();
-    close(clientfd);
+    // close(clientfd);
     cout << "退出成功！" << endl;
-    exit(0);
+    // exit(0);
 }
 
 void mainMenu(int clientfd)
@@ -565,7 +587,7 @@ void mainMenu(int clientfd)
     help();
 
     char buffer[1024] = {0};
-    for (;;)
+    while (isMainMenuRunning)
     {
         cin.getline(buffer, 1024);
         string commandBuf(buffer);

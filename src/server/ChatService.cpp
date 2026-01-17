@@ -119,7 +119,6 @@ void ChatService::login(const TcpConnectionPtr &conn,
                 }
                 response["groups"] = groupV;
             } 
-
             if(!response.contains("friends")) response["friends"] = vector<string>();
             if(!response.contains("groups")) response["groups"] = vector<string>();
             if(!response.contains("offlineMessage")) response["offlineMessage"] = vector<string>();
@@ -260,19 +259,27 @@ void ChatService::quit(const TcpConnectionPtr &conn, json &js, Timestamp time)
     int userId = js["id"].get<int>();
     LOG_INFO << "user id = " << userId << " quit login";
 
-    // 1. 核心逻辑：复用你已实现的clientCloseException，完成【状态更新+连接映射删除】
-    // 这个函数内部已经做了：从_userConnMap删除连接、更新用户状态为offline、同步数据库
-    this->clientCloseException(conn);
+    User user;
+    {
+        // 这里使用互斥锁保证线程安全，除了作用域锁自动释放
+        lock_guard<mutex> lock(_connMutex);
+        auto it = _userConnMap.find(userId);
+        if (it != _userConnMap.end())
+        {
+            user.setId(it->first);
+            _userConnMap.erase(it);
+        }
+    }
+    user.setState("offline");
+    _userModel.updateState(user);
 
-    // 2. 构造退出成功的响应报文，返回给客户端
     json response;
-    response["msgid"] = QUIT_MSG;  // 回包的msgid用退出消息id
-    response["errno"] = 0;         // 0代表成功
+    response["msgid"] = QUIT_MSG;  
+    response["errno"] = 0;        
     response["errmsg"] = "退出登录成功！";
     conn->send(response.dump());
 
-    // 3. 优雅关闭TCP连接 (muduo推荐的关闭方式，比close(fd)更安全)
-    conn->shutdown();
+    // conn->shutdown();
 }
 
 void ChatService::clientCloseException(const TcpConnectionPtr &conn)
