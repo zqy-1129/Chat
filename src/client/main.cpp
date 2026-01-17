@@ -209,8 +209,8 @@ int main(int argc, char **argv)
                                             group.setName(grpjs["groupName"]);
                                             group.setDesc(grpjs["groupDesc"]);
 
-                                            if(grpjs.contains("user") && !grpjs["user"].is_null() && grpjs["user"].is_array()){
-                                                vector<string> vec1 = grpjs["user"];
+                                            if(grpjs.contains("users") && !grpjs["users"].is_null() && grpjs["users"].is_array()){
+                                                vector<string> vec1 = grpjs["users"];
                                                 for (string &userstr: vec1)
                                                 {
                                                     json js = json::parse(userstr);
