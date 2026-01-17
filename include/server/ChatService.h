@@ -50,6 +50,9 @@ public:
     // 群聊
     void groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
 
+    // 退出
+    void quit(const TcpConnectionPtr &conn, json &js, Timestamp time);
+
     // 处理客户端异常退出
     void clientCloseException(const TcpConnectionPtr &conn);
 

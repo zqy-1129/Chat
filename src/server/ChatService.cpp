@@ -24,6 +24,7 @@ ChatService::ChatService()
     _msgHandlerMap.insert({CREATE_GROUP_MSG, bind(&ChatService::createGroup, this, _1, _2, _3)});
     _msgHandlerMap.insert({ADD_GROUP_MSG, bind(&ChatService::addGroup, this, _1, _2, _3)});
     _msgHandlerMap.insert({GROUP_CHAT_MSG, bind(&ChatService::groupChat, this, _1, _2, _3)});
+    _msgHandlerMap.insert({QUIT_MSG, bind(&ChatService::quit, this, _1, _2, _3)});
 }
 
 void ChatService::login(const TcpConnectionPtr &conn,
@@ -90,6 +91,22 @@ void ChatService::login(const TcpConnectionPtr &conn,
                 response["friends"] = vec2;
             }   
 
+            // 查询用户的群组信息
+            vector<Group> groupUserVec = _groupModel.queryGroups(id);
+            if (!groupUserVec.empty())
+            {
+                vector<string> groupV;
+                for (Group &group: groupUserVec)
+                {
+                    json js;
+                    js["id"] = group.getId();
+                    js["groupName"] = group.getName();
+                    js["groupDesc"] = group.getDesc();
+                    groupV.push_back(js.dump());
+                }
+                response["groups"] = groupV;
+            } 
+
             conn->send(response.dump());
         }
     }
@@ -115,7 +132,6 @@ void ChatService::login(const TcpConnectionPtr &conn,
         }
         
     }
-
 }
 
 void ChatService::reg(const TcpConnectionPtr &conn,
@@ -222,6 +238,25 @@ void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp ti
     }
 }
 
+void ChatService::quit(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int userId = js["id"].get<int>();
+    LOG_INFO << "user id = " << userId << " quit login";
+
+    // 1. 核心逻辑：复用你已实现的clientCloseException，完成【状态更新+连接映射删除】
+    // 这个函数内部已经做了：从_userConnMap删除连接、更新用户状态为offline、同步数据库
+    this->clientCloseException(conn);
+
+    // 2. 构造退出成功的响应报文，返回给客户端
+    json response;
+    response["msgid"] = QUIT_MSG;  // 回包的msgid用退出消息id
+    response["errno"] = 0;         // 0代表成功
+    response["errmsg"] = "退出登录成功！";
+    conn->send(response.dump());
+
+    // 3. 优雅关闭TCP连接 (muduo推荐的关闭方式，比close(fd)更安全)
+    conn->shutdown();
+}
 
 void ChatService::clientCloseException(const TcpConnectionPtr &conn)
 {   
