@@ -1,6 +1,7 @@
 #pragma once
 
 #include "json.hpp"
+#include "Redis.h"
 #include "UserModel.h"
 #include "OfflineMessageModel.h"
 #include "FriendModel.h"
@@ -37,6 +38,9 @@ public:
     void reg(const TcpConnectionPtr &conn,
         json &js,
         Timestamp time);
+    
+    // 添加好友业务
+    void addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time);
 
     // 一对一聊天
     void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
@@ -59,8 +63,8 @@ public:
     // 服务器异常关闭，业务重置
     void reset();
 
-    // 添加好友业务
-    void addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time);
+    // 处理订阅消息的回调
+    void handleRedisSubscribeMessage(int userId, string msg);
 
     // 获取消息对应的处理器
     MsgHandler getHandler(int msgid);
@@ -83,5 +87,7 @@ private:
     OfflineMessageModel _offlineMessageModel;
     FriendModel _friendModel;
     GroupModel _groupModel;
-
+    
+    // Redis对象
+    Redis _redis;
 };
